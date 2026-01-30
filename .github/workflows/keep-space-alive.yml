@@ -1,0 +1,32 @@
+name: Keep Spaces Alive
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Spaces Loop
+        env:
+          MY_URLS: ${{ secrets.SPACES_LIST }}
+        run: |
+          for url in $MY_URLS; do
+            curl -I -m 10 "$url" || echo "Failed to ping space"
+          done
+
+  keep-repo-active:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dummy Commit
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          date > last_run.txt
+          git add last_run.txt
+          git commit -m "Keepalive commit"
+          git push
